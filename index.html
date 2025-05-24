@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cifrador Vigenère</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222324;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 600px;
+            margin: 180px auto 0 auto;  /* <-- centrado horizontal y margen arriba */
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }     
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        textarea, input {
+            width: 100%;
+            padding: 10px;
+            font-size: 1.1em;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1.1em;
+            margin: 10px 5px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-size: 1.3em;
+            color: #333;
+        }
+
+        .explanation {
+            max-width: 600px;          /* misma anchura que container para que queden iguales */
+            margin: 240px auto 60px auto; /* centrado horizontal */
+            text-align: center;
+            color: #e0e0e0;
+            font-size: 22px;           /* más grande */
+            line-height: 1.5;          /* para mejor lectura */
+            padding: 0 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Cifrador Vigenère</h1>
+    <!-- Campo de texto para ingresar el mensaje -->
+    <textarea id="text" placeholder="Escribí tu mensaje..."></textarea>
+    
+    <!-- Campo para ingresar la clave -->
+    <input type="text" id="key" placeholder="Clave (solo letras y sin espaciado)">
+    
+    <!-- Botones para elegir acción -->
+    <button onclick="process('encrypt')">Encriptar</button>
+    <button onclick="process('decrypt')">Desencriptar</button>
+
+    <!-- Sección donde se mostrará el resultado -->
+    <div id="result"></div>
+</div>
+
+<!-- Explicación del cifrado Vigenère -->
+ <div class="explanation">
+    <strong>🔐 ¿Cómo funciona el cifrado Vigenère?</strong><br><br>
+    <p>El cifrado Vigenère es un método clásico de encriptación que utiliza una palabra clave
+    para desplazar las letras del mensaje original. Cada letra de la clave determina cuántos
+    lugares se moverá la letra correspondiente del texto. Esto hace que el cifrado sea más
+    seguro que un simple cifrado por desplazamiento, ya que varía el patrón con cada letra. </p>
+    <br>
+    <p>Proceso:
+    <ul>
+    <li>Se repite la clave hasta que tenga la misma longitud que el mensaje.</li>
+    <li>Cada letra de la clave indica cuántas posiciones se debe correr una letra del mensaje.</li>
+    </ul> </p>
+
+    <p>Ejemplo:
+    Si la clave es "SOL" y el mensaje es "HOLA":
+    <ul>                
+        <li>'S' es la letra 18 → H + 18 → Z </li>
+
+        <li>'O' es la letra 14 → O + 14 → C </li>
+
+        <li>'L' es la letra 11 → L + 11 → W </li>
+
+    <li>'S' de nuevo para A → A + 18 → S </li>
+    </ul> </p>
+    <br>
+    <p>Desencriptar: Se hace el proceso inverso (restar en lugar de sumar).</p>
+    <br>
+    <p>Importancia de la clave:
+        <ul>
+            <li>Sin la clave correcta, es casi imposible descifrar el mensaje.</li>
+
+            <li>Mientras más larga y aleatoria la clave, más seguro es el mensaje.</li>
+    </ul>
+    </p>
+
+  </div>
+
+
+<script>
+    // Función principal que procesa el texto dependiendo del modo
+    function process(mode) {
+        const text = document.getElementById("text").value;  // Obtiene el texto ingresado
+        const key = document.getElementById("key").value;    // Obtiene la clave ingresada
+        const result = vigenereCipher(text, key, mode);      // Llama a la función de cifrado/descifrado
+        document.getElementById("result").textContent = "Resultado: " + result;  // Muestra el resultado
+    }
+
+    // Función que implementa el cifrado y descifrado Vigenère
+    function vigenereCipher(text, key, mode) {
+        let result = "";
+        key = key.toUpperCase().replace(/[^A-Z]/g, '');  // Convierte a mayuscula y filtra todo excepto letras
+
+        let keyIndex = 0;         // Índice actual de la clave
+
+        for (let i = 0; i < text.length; i++) {  // Es un bucle que recorre cada carácter del texto ingresado uno por uno. i es el índice que empieza en 0 y se incrementa de a 1 hasta llegar al final del texto.
+
+            let char = text[i]; // Extrae el carácter en la posición i del texto y lo guarda en la variable char
+
+            if (/[a-zA-Z]/.test(char)) { // Verifica si el carácter es una letra
+                const isUpper = char === char.toUpperCase(); // Guarda si es mayúscula
+                char = char.toUpperCase();                   // Convierte a mayúscula para operar
+
+                // Obtiene el desplazamiento según la letra de la clave
+                const shift = key.charCodeAt(keyIndex % key.length) - 65;
+
+                // Aplica el desplazamiento
+                // Convierte la letra a número (0–25), aplica el desplazamiento y vuelve a convertir a letra (ASCII)
+                // Se usa 65 porque 'A' en ASCII es 65, lo que permite trabajar con letras como si fueran números del alfabeto
+                let newCharCode;
+                if (mode === 'encrypt') {
+                    newCharCode = (char.charCodeAt(0) - 65 + shift) % 26 + 65;
+                } else {
+                    newCharCode = (char.charCodeAt(0) - 65 - shift + 26) % 26 + 65;
+                }
+
+                let newChar = String.fromCharCode(newCharCode); // Convierte a letra
+
+                result += isUpper ? newChar : newChar.toLowerCase(); // Respeta mayúsculas/minúsculas
+                keyIndex++; // Avanza en la clave
+            } else {
+                result += char; // No modifica símbolos ni espacios
+            }
+        }
+
+        return result;
+    }
+</script>
+
+</body>
+</html>
